@@ -57,11 +57,12 @@
 .goal-label {
   font-size: 1rem;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .goal-desc {
   font-size: 0.82rem;
-  color: var(--text-muted);
+  color: #a0a0a0;
   line-height: 1.4;
 }
 

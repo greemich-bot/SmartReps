@@ -2,6 +2,10 @@
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   background-color: #1a1a1a; /* Dark theme background */
   color: #ffffff;
+  --text-muted: #a0a0a0;
+  --bg-card: #2a2a2a;
+  --border: #3a3a3a;
+  --primary: #6c63ff;
 }
 
 body {
