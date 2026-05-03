@@ -27,9 +27,10 @@
 
 .stat-card {
   background: var(--bg-card);
-  padding: 1.5rem;
-  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
   border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
   text-align: center;
 }
 
@@ -40,7 +41,8 @@
   margin-bottom: 0.5rem;
 }
 
-.stat-value {
+.stat-value,
+.value {
   font-size: 2rem;
   font-weight: bold;
   color: var(--primary);
@@ -48,6 +50,60 @@
 
 .stat-value small {
   font-size: 1rem;
+  color: var(--text-muted);
+}
+
+/* Activities */
+.activities-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.activities-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.activity-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 4px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: background 0.15s ease;
+}
+
+.activity-card:hover {
+  background: var(--bg-hover, color-mix(in srgb, var(--bg-card) 90%, var(--primary)));
+}
+
+.activity-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activity-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.activity-name {
+  font-size: 1.1rem;
+}
+
+.activity-type {
+  font-size: 0.85rem;
+  color: var(--primary);
+  text-transform: capitalize;
+}
+
+.activity-data {
+  font-size: 0.9rem;
   color: var(--text-muted);
 }
 
