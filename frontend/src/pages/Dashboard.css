@@ -1,11 +1,14 @@
 .dashboard-container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
   animation: fadeIn 0.5s ease-in;
 }
 
 .dashboard-header {
   margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .dashboard-header h1 {
@@ -17,21 +20,55 @@
   color: var(--text-muted);
 }
 
+/* Two-column body */
+.dashboard-body {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.stats-panel,
+.activities-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+@media (max-width: 700px) {
+  .dashboard-body {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Stat Grid */
 .stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0;
 }
 
 .stat-card {
-  background: var(--bg-card);
-  padding: 1rem 1.25rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--primary);
-  text-align: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stat-card:last-child {
+  border-bottom: none;
+}
+
+.stat-card h3 {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 .stat-label {
@@ -43,9 +80,10 @@
 
 .stat-value,
 .value {
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: bold;
   color: var(--primary);
+  line-height: 1.1;
 }
 
 .stat-value small {
@@ -53,7 +91,25 @@
   color: var(--text-muted);
 }
 
+.hrv-sparkline {
+  display: block;
+  margin: 0.25rem 0 0;
+}
+
+.hrv-trend {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0;
+}
+.hrv-trend[data-trend="up"]     { color: #34d399; }
+.hrv-trend[data-trend="down"]   { color: #f87171; }
+.hrv-trend[data-trend="stable"] { color: var(--text-muted); }
+
 /* Activities */
+.activities-section {
+  min-width: 0;
+}
+
 .activities-section h2 {
   font-size: 1.5rem;
   margin-bottom: 1rem;

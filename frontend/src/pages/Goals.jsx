@@ -14,35 +14,18 @@ const GOALS = [
 ];
 
 function Goals() {
-  const [selected, setSelected] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('smartreps_goals') || '[]'); }
-    catch { return []; }
-  });
-  const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
 
-  // Load from MongoDB on mount
   useEffect(() => {
     axios.get(API)
-      .then(res => {
-        const ids = res.data.goalIds || [];
-        setSelected(ids);
-        localStorage.setItem('smartreps_goals', JSON.stringify(ids));
-      })
-      .catch(() => { /* keep localStorage values on error */ });
+      .then(res => setSelected(res.data.goalIds || []))
+      .catch(() => {});
   }, []);
 
   const toggle = (id) => {
-    const next = selected.includes(id)
-      ? selected.filter(g => g !== id)
-      : [...selected, id];
-
+    const next = selected.includes(id) ? selected.filter(g => g !== id) : [...selected, id];
     setSelected(next);
-    localStorage.setItem('smartreps_goals', JSON.stringify(next));
-
-    setSaving(true);
-    axios.put(API, { goalIds: next })
-      .catch(() => { /* silent — localStorage already updated */ })
-      .finally(() => setSaving(false));
+    axios.put(API, { goalIds: next }).catch(() => {});
   };
 
   return (
@@ -67,9 +50,9 @@ function Goals() {
         ))}
       </div>
 
-      <p className="goals-summary">
-        {saving ? 'Saving…' : selected.length > 0 ? `${selected.length} goal${selected.length > 1 ? 's' : ''} selected` : ''}
-      </p>
+      {selected.length > 0 && (
+        <p className="goals-summary">{selected.length} goal{selected.length > 1 ? 's' : ''} selected</p>
+      )}
     </div>
   );
 }

@@ -2,6 +2,25 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Dashboard.css';
 
+function HrvSparkline({ values, trend }) {
+  if (!values || values.length < 2) return null;
+  const w = 80, h = 32, pad = 3;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (w - pad * 2);
+    const y = pad + (1 - (v - min) / range) * (h - pad * 2);
+    return `${x},${y}`;
+  }).join(' ');
+  const color = trend === 'up' ? '#34d399' : trend === 'down' ? '#f87171' : '#a0a0a0';
+  return (
+    <svg width={w} height={h} className="hrv-sparkline">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,57 +73,69 @@ function Dashboard() {
 
       {data.fromCache && !warning && <div className="status-message">Showing cached Garmin data.</div>}
       {warning && <div className="status-message">{warning}</div>}
-      
-      {/* Primary Stats Grid */}
-      <div className="stat-grid">
-        <div className="stat-card">
-          <h3>Resting HR</h3>
-          <p className="value">{formatMetric(data.heartRate, 'BPM')}</p>
+
+      <div className="dashboard-body">
+        {/* Stats column */}
+        <div className="stats-panel">
+        <div className="stat-grid">
+          <div className="stat-card">
+            <h3>Resting HR</h3>
+            <p className="value">{formatMetric(data.heartRate, 'BPM')}</p>
+          </div>
+
+          <div className="stat-card">
+            <h3>HRV</h3>
+            <p className="value">{formatMetric(data.hrv, 'ms')}</p>
+            <HrvSparkline values={data.hrvValues} trend={data.hrvTrend} />
+            {data.hrvTrend && (
+              <p className="hrv-trend" data-trend={data.hrvTrend}>
+                {data.hrvTrend === 'up' ? '↑ Improving' : data.hrvTrend === 'down' ? '↓ Declining' : '→ Stable'}
+              </p>
+            )}
+          </div>
+
+          <div className="stat-card">
+            <h3>Sleep</h3>
+            <p className="value">{formatMetric(data.sleep, 'hrs')}</p>
+          </div>
+
+          <div className="stat-card">
+            <h3>Steps</h3>
+            <p className="value">{data.steps != null ? data.steps.toLocaleString() : '--'}</p>
+          </div>
+
+          <div className="stat-card">
+            <h3>Calories</h3>
+            <p className="value">{formatMetric(data.calories, 'kcal')}</p>
+          </div>
         </div>
-        
-        <div className="stat-card">
-          <h3>HRV</h3>
-          <p className="value">{formatMetric(data.hrv, 'ms')}</p>
         </div>
 
-        <div className="stat-card">
-          <h3>Sleep</h3>
-          <p className="value">{formatMetric(data.sleep, 'hrs')}</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>Steps</h3>
-          <p className="value">{data.steps != null ? data.steps.toLocaleString() : '--'}</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>Calories</h3>
-          <p className="value">{formatMetric(data.calories, 'kcal')}</p>
+        {/* Activities column */}
+        <div className="activities-panel">
+        <section className="activities-section">
+          <h2>Recent Activities</h2>
+          <div className="activities-list">
+            {data.recentActivities && data.recentActivities.length > 0 ? (
+              data.recentActivities.map((act) => (
+                <div key={act.id} className="activity-card">
+                  <div className="activity-main">
+                    <span className="activity-date">{act.date}</span>
+                    <strong className="activity-name">{act.name}</strong>
+                    <span className="activity-type">{act.type.replace('_', ' ')}</span>
+                  </div>
+                  <div className="activity-data">
+                    <span className="activity-distance">{act.distance} miles</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="no-data">No workouts recorded in the last few days.</p>
+            )}
+          </div>
+        </section>
         </div>
       </div>
-
-      {/* Recent Activities Section */}
-      <section className="activities-section">
-        <h2>Recent Activities</h2>
-        <div className="activities-list">
-          {data.recentActivities && data.recentActivities.length > 0 ? (
-            data.recentActivities.map((act) => (
-              <div key={act.id} className="activity-card">
-                <div className="activity-main">
-                  <span className="activity-date">{act.date}</span>
-                  <strong className="activity-name">{act.name}</strong>
-                  <span className="activity-type">{act.type.replace('_', ' ')}</span>
-                </div>
-                <div className="activity-data">
-                  <span className="activity-distance">{act.distance} miles</span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="no-data">No workouts recorded in the last few days.</p>
-          )}
-        </div>
-      </section>
     </div>
   );
 }

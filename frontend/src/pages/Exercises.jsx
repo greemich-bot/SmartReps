@@ -52,23 +52,27 @@ const GOAL_LABELS = {
 
 const INTENSITY_COLOR = { Low: 'intensity-low', Medium: 'intensity-med', High: 'intensity-high' };
 
+// Map HRV trend → recommended intensity to star
+function recommendedIntensity(hrvTrend) {
+  if (hrvTrend === 'up')   return 'High';
+  if (hrvTrend === 'down') return 'Low';
+  if (hrvTrend === 'stable') return 'Medium';
+  return null;
+}
+
 function Exercises() {
-  const [goals, setGoals] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [goals, setGoals]       = useState([]);
+  const [hrvTrend, setHrvTrend] = useState(null);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    axios.get('http://localhost:5001/api/user-goals')
-      .then(res => {
-        const ids = res.data.goalIds || [];
-        setGoals(ids);
-        localStorage.setItem('smartreps_goals', JSON.stringify(ids));
-      })
-      .catch(() => {
-        // Fall back to localStorage if API is unavailable
-        try { setGoals(JSON.parse(localStorage.getItem('smartreps_goals') || '[]')); }
-        catch { setGoals([]); }
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      axios.get('http://localhost:5001/api/user-goals'),
+      axios.get('http://localhost:5001/api/dashboard-data').catch(() => ({ data: {} })),
+    ]).then(([goalsRes, dashRes]) => {
+      setGoals(goalsRes.data.goalIds || []);
+      setHrvTrend(dashRes.data.hrvTrend || null);
+    }).catch(() => setGoals([])).finally(() => setLoading(false));
   }, []);
 
   const activeGoals = goals.filter(g => WORKOUTS_BY_GOAL[g]);
@@ -82,6 +86,14 @@ function Exercises() {
         <p>{activeGoals.length === 0 ? 'Select goals on the Goals page to see personalised suggestions.' : 'Based on your selected goals.'}</p>
       </header>
 
+      {hrvTrend && (
+        <div className="hrv-rec-banner">
+          {hrvTrend === 'up'     && '📈 Your HRV is improving — great day to push hard. High-intensity workouts are starred.'}
+          {hrvTrend === 'down'   && '📉 Your HRV is low — prioritise recovery today. Easy workouts are starred.'}
+          {hrvTrend === 'stable' && '➡️ Your HRV is stable — moderate effort is ideal. Medium-intensity workouts are starred.'}
+        </div>
+      )}
+
       {activeGoals.length === 0 ? (
         <div className="exercises-empty">No goals selected yet. Head to the Goals page to get started.</div>
       ) : (
@@ -89,16 +101,22 @@ function Exercises() {
           <section key={goalId} className="goal-section">
             <h2 className="goal-section-title">{GOAL_LABELS[goalId]}</h2>
             <div className="workout-grid">
-              {WORKOUTS_BY_GOAL[goalId].map(w => (
-                <div key={w.name} className="workout-tile">
-                  <div className="workout-top">
-                    <span className="workout-name">{w.name}</span>
-                    <span className={`workout-intensity ${INTENSITY_COLOR[w.intensity]}`}>{w.intensity}</span>
+              {WORKOUTS_BY_GOAL[goalId].map(w => {
+                const starred = recommendedIntensity(hrvTrend) === w.intensity;
+                return (
+                  <div key={w.name} className={`workout-tile${starred ? ' workout-starred' : ''}`}>
+                    <div className="workout-top">
+                      <span className="workout-name">
+                        {starred && <span className="star-badge" title="Recommended based on your HRV">★</span>}
+                        {w.name}
+                      </span>
+                      <span className={`workout-intensity ${INTENSITY_COLOR[w.intensity]}`}>{w.intensity}</span>
+                    </div>
+                    <p className="workout-desc">{w.desc}</p>
+                    <span className="workout-duration">⏱ {w.duration}</span>
                   </div>
-                  <p className="workout-desc">{w.desc}</p>
-                  <span className="workout-duration">⏱ {w.duration}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         ))

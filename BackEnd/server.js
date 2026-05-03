@@ -32,6 +32,30 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 const asNum = (v) => (typeof v === 'number' && !Number.isNaN(v) ? v : null);
 
+// Returns { values: number[], trend: 'up'|'down'|'stable'|null }
+const computeHrvTrend = async () => {
+    const today = new Date();
+    const dates = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        return d;
+    });
+
+    const results = await Promise.allSettled(dates.map(d => GCClient.getSleepData(d)));
+    const values = results
+        .map(r => r.status === 'fulfilled' ? asNum(r.value?.avgOvernightHrv) : null)
+        .filter(v => v !== null);
+
+    if (values.length < 2) return { values, trend: null };
+
+    const recent = values.slice(0, 3).reduce((a, b) => a + b, 0) / Math.min(3, values.length);
+    const older  = values.slice(-3).reduce((a, b) => a + b, 0) / Math.min(3, values.length);
+    const diff = recent - older;
+    const trend = diff > 2 ? 'up' : diff < -2 ? 'down' : 'stable';
+
+    return { values, trend };
+};
+
 const mapActivity = (act) => ({
     id:       act.activityId || act.id || `${act.startTimeLocal || Date.now()}-${act.activityName || 'activity'}`,
     date:     act.startTimeLocal
@@ -84,24 +108,28 @@ app.get('/api/dashboard-data', async (req, res) => {
     }
 
     try {
-        const [stepsRes, hrRes, sleepRes, actsRes] = await Promise.allSettled([
+        const [stepsRes, hrRes, sleepRes, actsRes, hrvTrendRes] = await Promise.allSettled([
             GCClient.getSteps(new Date()),
             GCClient.getHeartRate(new Date()),
             GCClient.getSleepData(new Date()),
-            GCClient.getActivities(0, 5)
+            GCClient.getActivities(0, 5),
+            computeHrvTrend()
         ]);
 
-        const s     = stepsRes.status  === 'fulfilled' ? stepsRes.value  : {};
-        const hr    = hrRes.status     === 'fulfilled' ? hrRes.value     : {};
-        const sleep = sleepRes.status  === 'fulfilled' ? sleepRes.value  : {};
-        const acts  = actsRes.status   === 'fulfilled' ? actsRes.value   : [];
+        const s        = stepsRes.status    === 'fulfilled' ? stepsRes.value    : {};
+        const hr       = hrRes.status       === 'fulfilled' ? hrRes.value       : {};
+        const sleep    = sleepRes.status    === 'fulfilled' ? sleepRes.value    : {};
+        const acts     = actsRes.status     === 'fulfilled' ? actsRes.value     : [];
+        const hrvTrend = hrvTrendRes.status === 'fulfilled' ? hrvTrendRes.value : { values: [], trend: null };
 
         const sleepSecs = sleep?.dailySleepDTO?.sleepTimeSeconds ?? sleep?.sleepTimeSeconds ?? null;
         const latest = acts[0] || {};
 
         const response = {
             heartRate: asNum(hr?.restingHeartRate ?? hr?.dailyRestingHeartRate ?? hr?.heartRateValues?.[0]?.[1] ?? hr?.allMetrics?.metricsMap?.WELLNESS_RESTING_HEART_RATE?.value),
-            hrv:       null,
+            hrv:       asNum(sleep?.avgOvernightHrv ?? null),
+            hrvTrend:  hrvTrend.trend,
+            hrvValues: hrvTrend.values,
             sleep:     sleepSecs != null ? +(sleepSecs / 3600).toFixed(1) : null,
             steps:     asNum(s?.totalSteps ?? s?.steps ?? s?.dailySteps ?? s?.allMetrics?.metricsMap?.TOTAL_STEPS?.value ?? latest?.steps),
             calories:  asNum(s?.totalKilocalories ?? s?.calories ?? s?.activeKilocalories ?? s?.allMetrics?.metricsMap?.TOTAL_CALORIES?.value ?? latest?.calories),
@@ -147,7 +175,7 @@ app.put('/api/user-goals', async (req, res) => {
     const { goalIds } = req.body;
     if (!Array.isArray(goalIds)) return res.status(400).json({ error: 'goalIds must be an array' });
     try {
-        const doc = await UserGoals.findOneAndUpdate({}, { goalIds, updatedAt: new Date() }, { upsert: true, new: true });
+        const doc = await UserGoals.findOneAndUpdate({}, { goalIds, updatedAt: new Date() }, { upsert: true, returnDocument: 'after' });
         res.json({ goalIds: doc.goalIds });
     } catch {
         res.status(500).json({ error: 'Failed to save user goals' });
