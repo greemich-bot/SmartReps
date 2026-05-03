@@ -88,6 +88,36 @@ app.delete('/api/goals/:id', async (req, res) => {
     }
 });
 
+app.get('/api/health-metrics', async (req, res) => {
+    if (!isGarminLoggedIn) return res.status(503).json({ error: "Garmin not connected" });
+    
+    try {
+        const today = new Date();
+        
+        // 1. Fetch heart rate (restingHeartRate is usually here)
+        const hrData = await GCClient.getHeartRate(today);
+        
+        // 2. Fetch sleep data (HRV and Readiness are deep in this object)
+        const sleepData = await GCClient.getSleepDuration(today);
+
+        // 3. Fetch weight using the built-in pound converter
+        const weightLbs = await GCClient.getDailyWeightInPounds(today).catch(() => "N/A");
+
+        res.json({
+            weight: weightLbs !== "N/A" ? weightLbs.toFixed(1) : "N/A",
+            heartRate: hrData?.restingHeartRate || "--",
+            // Training Readiness and HRV are nested in the dailySleepDTO
+            readiness: sleepData?.dailySleepDTO?.trainingReadinessValue || "N/A",
+            hrv: sleepData?.dailySleepDTO?.hrvSummary?.lastNightAvg || "N/A",
+            updatedAt: today.toISOString()
+        });
+    } catch (error) {
+        console.error("Health Data Error:", error.message);
+        res.status(500).json({ error: "Failed to fetch health metrics" });
+    }
+});
+
+
 // --- START SERVER ---
 const PORT = 5001;
 app.listen(PORT, () => {
