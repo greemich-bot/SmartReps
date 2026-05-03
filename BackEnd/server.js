@@ -88,34 +88,44 @@ app.delete('/api/goals/:id', async (req, res) => {
     }
 });
 
-app.get('/api/health-metrics', async (req, res) => {
+app.get('/api/dashboard-data', async (req, res) => {
     if (!isGarminLoggedIn) return res.status(503).json({ error: "Garmin not connected" });
     
     try {
         const today = new Date();
         
-        // 1. Fetch heart rate (restingHeartRate is usually here)
-        const hrData = await GCClient.getHeartRate(today);
-        
-        // 2. Fetch sleep data (HRV and Readiness are deep in this object)
-        const sleepData = await GCClient.getSleepDuration(today);
+        // Fetch everything in parallel to save time
+        const [stats, hrData, sleepData, activities] = await Promise.all([
+            GCClient.getUserSummary(today),
+            GCClient.getHeartRate(today),
+            GCClient.getSleepData(today),
+            GCClient.getActivities(0, 5) // Fetch last 5 activities
+        ]);
 
-        // 3. Fetch weight using the built-in pound converter
-        const weightLbs = await GCClient.getDailyWeightInPounds(today).catch(() => "N/A");
+        // Calculate sleep hours from seconds
+        const sleepSeconds = sleepData.dailySleepDTO?.sleepTimeSeconds || 0;
+        const sleepHours = (sleepSeconds / 3600).toFixed(1);
 
         res.json({
-            weight: weightLbs !== "N/A" ? weightLbs.toFixed(1) : "N/A",
-            heartRate: hrData?.restingHeartRate || "--",
-            // Training Readiness and HRV are nested in the dailySleepDTO
-            readiness: sleepData?.dailySleepDTO?.trainingReadinessValue || "N/A",
-            hrv: sleepData?.dailySleepDTO?.hrvSummary?.lastNightAvg || "N/A",
-            updatedAt: today.toISOString()
+            weight: stats.weight ? (stats.weight / 453.592).toFixed(1) : "N/A",
+            heartRate: hrData.restingHeartRate || stats.restingHeartRate || "--",
+            readiness: sleepData.dailySleepDTO?.trainingReadiness?.score || "N/A",
+            hrv: sleepData.dailySleepDTO?.hrvSummary?.lastNightAvg || "N/A",
+            sleep: sleepHours,
+            recentActivities: activities.map(act => ({
+                id: act.activityId,
+                name: act.activityName || "Workout",
+                type: act.activityType.typeKey,
+                distance: (act.distance / 1609.34).toFixed(2),
+                date: new Date(act.startTimeLocal).toLocaleDateString()
+            }))
         });
     } catch (error) {
-        console.error("Health Data Error:", error.message);
-        res.status(500).json({ error: "Failed to fetch health metrics" });
+        console.error("Dashboard Data Error:", error.message);
+        res.status(500).json({ error: "Failed to fetch dashboard data" });
     }
 });
+
 
 
 // --- START SERVER ---
