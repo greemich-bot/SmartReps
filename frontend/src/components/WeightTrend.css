@@ -63,8 +63,137 @@
   font-size: 0.85rem;
 }
 
+.weighttrend-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.garmin { background: var(--primary); margin-left: 0.5rem; }
+.legend-dot.manual { background: #34d399; margin-left: 0.5rem; }
+
 .weighttrend-empty {
   margin: 0.25rem 0 0;
   color: var(--text-muted);
   font-size: 0.88rem;
 }
+
+/* Manual weight log form */
+.weightlog-form-section {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.weightlog-form-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.weightlog-form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.weightlog-form input[type="date"],
+.weightlog-form input[type="number"] {
+  background: #1f1f1f;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #fff;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.weightlog-form input[type="date"]:focus,
+.weightlog-form input[type="number"]:focus {
+  border-color: var(--primary);
+}
+
+.weightlog-form input[type="number"] {
+  width: 130px;
+}
+
+.weightlog-btn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.weightlog-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.weightlog-btn.save {
+  background: var(--primary);
+  color: #fff;
+}
+
+.weightlog-btn.revert {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.weightlog-btn.revert:hover:not(:disabled) {
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.weightlog-status {
+  margin: 0.4rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Manual entries list */
+.weightlog-list {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.weightlog-list-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.weightlog-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.weightlog-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.5rem;
+  background: #1f1f1f;
+  border-radius: 5px;
+  font-size: 0.85rem;
+}
+
+.weightlog-entry-date { color: var(--text-muted); }
+.weightlog-entry-val  { color: #34d399; font-weight: 600; }
+

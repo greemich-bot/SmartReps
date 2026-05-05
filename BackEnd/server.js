@@ -26,6 +26,12 @@ const MaxLiftLog = mongoose.model('MaxLiftLog', new mongoose.Schema({
     createdAt:  { type: Date, default: Date.now }
 }));
 
+const WeightLog = mongoose.model('WeightLog', new mongoose.Schema({
+    date:      { type: Date, required: true },
+    weightLbs: { type: Number, required: true },
+    createdAt: { type: Date, default: Date.now }
+}));
+
 // --- Garmin ---
 const GCClient = new GarminConnect({
     username:  process.env.GARMIN_USERNAME,
@@ -265,6 +271,51 @@ app.delete('/api/max-lifts/latest', async (req, res) => {
         res.json({ deletedId: latest._id, deletedDate: latest.date });
     } catch {
         res.status(500).json({ error: 'Failed to delete latest max-lift entry' });
+    }
+});
+
+app.get('/api/weight-log', async (req, res) => {
+    try {
+        const logs = await WeightLog.find().sort({ date: 1, createdAt: 1 });
+        const entries = logs.map((l) => ({
+            id: l._id,
+            date: l.date.toISOString().slice(0, 10),
+            weightLbs: l.weightLbs
+        }));
+        res.json({ entries });
+    } catch {
+        res.status(500).json({ error: 'Failed to fetch weight log' });
+    }
+});
+
+app.post('/api/weight-log', async (req, res) => {
+    const dateInput = req.body?.date;
+    const date = dateInput ? new Date(dateInput) : new Date();
+    if (Number.isNaN(date.getTime())) {
+        return res.status(400).json({ error: 'date must be a valid ISO date or yyyy-mm-dd string' });
+    }
+
+    const weightLbs = Number(req.body?.weightLbs);
+    if (!Number.isFinite(weightLbs) || weightLbs <= 0 || weightLbs > 1500) {
+        return res.status(400).json({ error: 'weightLbs must be a positive number' });
+    }
+
+    try {
+        const doc = await WeightLog.create({ date, weightLbs: +weightLbs.toFixed(1) });
+        res.json({ id: doc._id, date: doc.date.toISOString().slice(0, 10), weightLbs: doc.weightLbs });
+    } catch {
+        res.status(500).json({ error: 'Failed to save weight entry' });
+    }
+});
+
+app.delete('/api/weight-log/latest', async (req, res) => {
+    try {
+        const latest = await WeightLog.findOne().sort({ date: -1, createdAt: -1 });
+        if (!latest) return res.status(404).json({ error: 'No weight entries to delete' });
+        await WeightLog.deleteOne({ _id: latest._id });
+        res.json({ deletedId: latest._id, deletedDate: latest.date });
+    } catch {
+        res.status(500).json({ error: 'Failed to delete weight entry' });
     }
 });
 

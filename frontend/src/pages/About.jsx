@@ -1,5 +1,6 @@
-import './About.css';
+import '../components/About.css';
 import { AboutSections } from '../components/AboutSection';
+import HowToSection from '../components/HowToSection';
 
 function About() {
 	return (
@@ -12,7 +13,10 @@ function About() {
 				</p>
 			</header>
 
+			
+
       <AboutSections />
+      <HowToSection />
 		</div>
 	);
 }
