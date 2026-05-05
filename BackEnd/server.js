@@ -71,7 +71,7 @@ const mapActivity = (act) => ({
 // Fallback: cache → empty
 const sendFallback = (res, warning) => {
     if (dashboardCache) return res.json({ ...dashboardCache, fromCache: true, warning });
-    res.json({ heartRate: null, hrv: null, sleep: null, steps: null, calories: null, recentActivities: [], warning });
+    res.json({ heartRate: null, hrv: null, sleep: null, steps: null, recentActivities: [], warning });
 };
 
 (async () => {
@@ -131,8 +131,7 @@ app.get('/api/dashboard-data', async (req, res) => {
             hrvTrend:  hrvTrend.trend,
             hrvValues: hrvTrend.values,
             sleep:     sleepSecs != null ? +(sleepSecs / 3600).toFixed(1) : null,
-            steps:     asNum(s?.totalSteps ?? s?.steps ?? s?.dailySteps ?? s?.allMetrics?.metricsMap?.TOTAL_STEPS?.value ?? latest?.steps),
-            calories:  asNum(s?.totalKilocalories ?? s?.calories ?? s?.activeKilocalories ?? s?.allMetrics?.metricsMap?.TOTAL_CALORIES?.value ?? latest?.calories),
+            steps:     asNum(typeof s === 'number' ? s : s?.totalSteps ?? s?.steps ?? s?.dailySteps ?? s?.allMetrics?.metricsMap?.TOTAL_STEPS?.value ?? latest?.steps),
             recentActivities: acts.map(act => ({
                 id:       act.activityId,
                 date:     act.startTimeLocal ? new Date(act.startTimeLocal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown',
@@ -142,7 +141,7 @@ app.get('/api/dashboard-data', async (req, res) => {
             }))
         };
 
-        const hasData = response.heartRate !== null || response.sleep !== null || response.steps !== null || response.calories !== null;
+        const hasData = response.heartRate !== null || response.sleep !== null || response.steps !== null;
         if (!hasData && dashboardCache) {
             return res.json({
                 ...dashboardCache,

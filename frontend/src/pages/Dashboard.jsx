@@ -127,17 +127,6 @@ function Dashboard() {
             </h3>
             <p className="value">{data.steps != null ? data.steps.toLocaleString() : '--'}</p>
           </div>
-
-          <div className="stat-card">
-            <h3>
-              Calories
-              <span
-                className="stat-info"
-                data-tooltip="Active calories burned today. Does not include your basal metabolic rate (calories burned at rest)."
-              >ⓘ</span>
-            </h3>
-            <p className="value">{formatMetric(data.calories, 'kcal')}</p>
-          </div>
         </div>
         </div>
 
