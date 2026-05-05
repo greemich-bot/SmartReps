@@ -68,23 +68,35 @@ function Dashboard() {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <h1>Health Overview</h1>
-        <button className="sync-btn" onClick={fetchDashboardData}>Refresh Data</button>
+        <button className="sync-btn" data-tooltip="By updating your Garmin data, we are able to personalize your workout recommendations, so you know when to push a little harder, and when to let up a little bit!" onClick={fetchDashboardData}>Refresh Data</button>
       </header>
 
-      {data.fromCache && !warning && <div className="status-message">Showing cached Garmin data.</div>}
-      {warning && <div className="status-message">{warning}</div>}
+    
 
       <div className="dashboard-body">
         {/* Stats column */}
         <div className="stats-panel">
         <div className="stat-grid">
+          <h2 className="panel-title">Today's Stats </h2>
           <div className="stat-card">
-            <h3>Resting HR</h3>
+            <h3>
+              Resting HR
+              <span
+                className="stat-info"
+                data-tooltip="Your heart rate while at rest. Lower is generally better — a sign of cardiovascular fitness."
+              >ⓘ</span>
+            </h3>
             <p className="value">{formatMetric(data.heartRate, 'BPM')}</p>
           </div>
 
           <div className="stat-card">
-            <h3>HRV</h3>
+            <h3>
+              HRV
+              <span
+                className="stat-info"
+                data-tooltip="Heart Rate Variability — the time variation between heartbeats. Higher HRV = better recovery and readiness."
+              >ⓘ</span>
+            </h3>
             <p className="value">{formatMetric(data.hrv, 'ms')}</p>
             <HrvSparkline values={data.hrvValues} trend={data.hrvTrend} />
             {data.hrvTrend && (
@@ -95,17 +107,35 @@ function Dashboard() {
           </div>
 
           <div className="stat-card">
-            <h3>Sleep</h3>
+            <h3>
+              Sleep
+              <span
+                className="stat-info"
+                data-tooltip="Total sleep duration last night from your Garmin. Adults need 7–9 hrs for optimal recovery."
+              >ⓘ</span>
+            </h3>
             <p className="value">{formatMetric(data.sleep, 'hrs')}</p>
           </div>
 
           <div className="stat-card">
-            <h3>Steps</h3>
+            <h3>
+              Steps
+              <span
+                className="stat-info"
+                data-tooltip="Total steps taken today. 7,000–10,000 steps per day is linked to improved cardiovascular health."
+              >ⓘ</span>
+            </h3>
             <p className="value">{data.steps != null ? data.steps.toLocaleString() : '--'}</p>
           </div>
 
           <div className="stat-card">
-            <h3>Calories</h3>
+            <h3>
+              Calories
+              <span
+                className="stat-info"
+                data-tooltip="Active calories burned today. Does not include your basal metabolic rate (calories burned at rest)."
+              >ⓘ</span>
+            </h3>
             <p className="value">{formatMetric(data.calories, 'kcal')}</p>
           </div>
         </div>

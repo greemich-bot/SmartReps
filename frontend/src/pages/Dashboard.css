@@ -20,6 +20,49 @@
   color: var(--text-muted);
 }
 
+/* Refresh button */
+.sync-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  position: relative;
+}
+
+.sync-btn:hover {
+  opacity: 0.85;
+}
+
+/* Tooltip */
+.sync-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #111;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
+  padding: 0.35rem 0.65rem;
+  border-radius: 5px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 100;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.sync-btn:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Two-column body */
 .dashboard-body {
   display: grid;
@@ -69,6 +112,46 @@
   letter-spacing: 0.06em;
   color: var(--text-muted);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Info icon tooltip */
+.stat-info {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: default;
+  position: relative;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.stat-info::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: #111;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.4;
+  width: 220px;
+  white-space: normal;
+  padding: 0.4rem 0.65rem;
+  border-radius: 5px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 100;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.stat-info:hover::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .stat-label {
