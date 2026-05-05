@@ -1,0 +1,70 @@
+.weighttrend-card {
+  margin-top: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.weighttrend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.weighttrend-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.weighttrend-delta {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.weighttrend-delta.down {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.weighttrend-delta.up {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.weighttrend-chart {
+  width: 100%;
+  height: 240px;
+  display: block;
+  background: #1f1f1f;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.weighttrend-axis {
+  margin-top: 0.6rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.weighttrend-axis strong {
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.weighttrend-empty {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}

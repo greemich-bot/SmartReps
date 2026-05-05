@@ -127,6 +127,17 @@ function Dashboard() {
             </h3>
             <p className="value">{data.steps != null ? data.steps.toLocaleString() : '--'}</p>
           </div>
+
+          <div className="stat-card">
+            <h3>
+              Weight
+              <span
+                className="stat-info"
+                data-tooltip="Your most recent weight logged on your Garmin device, in pounds."
+              >ⓘ</span>
+            </h3>
+            <p className="value">{data.weight != null ? `${data.weight} lbs` : '--'}</p>
+          </div>
         </div>
         </div>
 

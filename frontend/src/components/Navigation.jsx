@@ -7,6 +7,7 @@ function Navigation() {
             <Link to="/">Dashboard</Link>
             <Link to="/goals">Goals</Link>
             <Link to="/exercises">Exercises</Link>
+            <Link to="/about">About</Link>
         </nav>
     );
 }

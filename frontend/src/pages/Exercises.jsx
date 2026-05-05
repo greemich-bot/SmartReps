@@ -88,9 +88,9 @@ function Exercises() {
 
       {hrvTrend && (
         <div className="hrv-rec-banner">
-          {hrvTrend === 'up'     && '📈 Your HRV is improving — great day to push hard. High-intensity workouts are starred.'}
-          {hrvTrend === 'down'   && '📉 Your HRV is low — prioritise recovery today. Easy workouts are starred.'}
-          {hrvTrend === 'stable' && '➡️ Your HRV is stable — moderate effort is ideal. Medium-intensity workouts are starred.'}
+          {hrvTrend === 'up'     && 'HRV trend: improving. Great day to push hard. High-intensity workouts are highlighted.'}
+          {hrvTrend === 'down'   && 'HRV trend: declining. Prioritize recovery today. Easy workouts are highlighted.'}
+          {hrvTrend === 'stable' && 'HRV trend: stable. Moderate effort is ideal. Medium-intensity workouts are highlighted.'}
         </div>
       )}
 
@@ -107,13 +107,13 @@ function Exercises() {
                   <div key={w.name} className={`workout-tile${starred ? ' workout-starred' : ''}`}>
                     <div className="workout-top">
                       <span className="workout-name">
-                        {starred && <span className="star-badge" title="Recommended based on your HRV">★</span>}
+                        {starred && <span className="star-badge" title="Recommended based on your HRV">Recommended</span>}
                         {w.name}
                       </span>
                       <span className={`workout-intensity ${INTENSITY_COLOR[w.intensity]}`}>{w.intensity}</span>
                     </div>
                     <p className="workout-desc">{w.desc}</p>
-                    <span className="workout-duration">⏱ {w.duration}</span>
+                    <span className="workout-duration">Duration: {w.duration}</span>
                   </div>
                 );
               })}

@@ -18,6 +18,14 @@ const UserGoals = mongoose.model('UserGoals', new mongoose.Schema({
     updatedAt: { type: Date,     default: Date.now }
 }));
 
+const MaxLiftLog = mongoose.model('MaxLiftLog', new mongoose.Schema({
+    date:       { type: Date, required: true },
+    squat:      { type: Number, default: null },
+    deadlift:   { type: Number, default: null },
+    benchpress: { type: Number, default: null },
+    createdAt:  { type: Date, default: Date.now }
+}));
+
 // --- Garmin ---
 const GCClient = new GarminConnect({
     username:  process.env.GARMIN_USERNAME,
@@ -29,6 +37,9 @@ let isGarminLoggedIn = false;
 let dashboardCache = null;
 let dashboardCacheUpdatedAt = 0;
 const CACHE_TTL = 5 * 60 * 1000;
+let weightTrendCache = null;
+let weightTrendCacheUpdatedAt = 0;
+const WEIGHT_TREND_CACHE_TTL = 30 * 60 * 1000;
 
 const asNum = (v) => (typeof v === 'number' && !Number.isNaN(v) ? v : null);
 
@@ -71,7 +82,7 @@ const mapActivity = (act) => ({
 // Fallback: cache → empty
 const sendFallback = (res, warning) => {
     if (dashboardCache) return res.json({ ...dashboardCache, fromCache: true, warning });
-    res.json({ heartRate: null, hrv: null, sleep: null, steps: null, recentActivities: [], warning });
+    res.json({ heartRate: null, hrv: null, sleep: null, steps: null, weight: null, recentActivities: [], warning });
 };
 
 (async () => {
@@ -108,12 +119,13 @@ app.get('/api/dashboard-data', async (req, res) => {
     }
 
     try {
-        const [stepsRes, hrRes, sleepRes, actsRes, hrvTrendRes] = await Promise.allSettled([
+        const [stepsRes, hrRes, sleepRes, actsRes, hrvTrendRes, weightRes] = await Promise.allSettled([
             GCClient.getSteps(new Date()),
             GCClient.getHeartRate(new Date()),
             GCClient.getSleepData(new Date()),
             GCClient.getActivities(0, 5),
-            computeHrvTrend()
+            computeHrvTrend(),
+            GCClient.getDailyWeightInPounds(new Date())
         ]);
 
         const s        = stepsRes.status    === 'fulfilled' ? stepsRes.value    : {};
@@ -121,6 +133,7 @@ app.get('/api/dashboard-data', async (req, res) => {
         const sleep    = sleepRes.status    === 'fulfilled' ? sleepRes.value    : {};
         const acts     = actsRes.status     === 'fulfilled' ? actsRes.value     : [];
         const hrvTrend = hrvTrendRes.status === 'fulfilled' ? hrvTrendRes.value : { values: [], trend: null };
+        const weightLbs = weightRes.status  === 'fulfilled' ? weightRes.value   : null;
 
         const sleepSecs = sleep?.dailySleepDTO?.sleepTimeSeconds ?? sleep?.sleepTimeSeconds ?? null;
         const latest = acts[0] || {};
@@ -132,6 +145,7 @@ app.get('/api/dashboard-data', async (req, res) => {
             hrvValues: hrvTrend.values,
             sleep:     sleepSecs != null ? +(sleepSecs / 3600).toFixed(1) : null,
             steps:     asNum(typeof s === 'number' ? s : s?.totalSteps ?? s?.steps ?? s?.dailySteps ?? s?.allMetrics?.metricsMap?.TOTAL_STEPS?.value ?? latest?.steps),
+            weight:    asNum(typeof weightLbs === 'number' ? +weightLbs.toFixed(1) : null),
             recentActivities: acts.map(act => ({
                 id:       act.activityId,
                 date:     act.startTimeLocal ? new Date(act.startTimeLocal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown',
@@ -178,6 +192,135 @@ app.put('/api/user-goals', async (req, res) => {
         res.json({ goalIds: doc.goalIds });
     } catch {
         res.status(500).json({ error: 'Failed to save user goals' });
+    }
+});
+
+app.get('/api/max-lifts', async (req, res) => {
+    try {
+        const logs = await MaxLiftLog.find().sort({ date: 1, createdAt: 1 });
+        if (!logs.length) return res.json({ entries: [], latest: { squat: null, deadlift: null, benchpress: null } });
+
+        const entries = logs.map((l) => ({
+            id: l._id,
+            date: l.date,
+            squat: l.squat,
+            deadlift: l.deadlift,
+            benchpress: l.benchpress
+        }));
+
+        const latest = entries[entries.length - 1];
+        res.json({
+            entries,
+            latest: {
+                squat: latest.squat,
+                deadlift: latest.deadlift,
+                benchpress: latest.benchpress,
+                date: latest.date
+            }
+        });
+    } catch {
+        res.status(500).json({ error: 'Failed to fetch max lifts' });
+    }
+});
+
+app.put('/api/max-lifts', async (req, res) => {
+    const normalize = (v) => {
+        if (v === null || v === undefined || v === '') return null;
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 0 ? n : NaN;
+    };
+
+    const dateInput = req.body?.date;
+    const date = dateInput ? new Date(dateInput) : new Date();
+    const squat = normalize(req.body?.squat);
+    const deadlift = normalize(req.body?.deadlift);
+    const benchpress = normalize(req.body?.benchpress);
+
+    if (Number.isNaN(date.getTime())) {
+        return res.status(400).json({ error: 'date must be a valid ISO date or yyyy-mm-dd string' });
+    }
+
+    if (Number.isNaN(squat) || Number.isNaN(deadlift) || Number.isNaN(benchpress)) {
+        return res.status(400).json({ error: 'squat, deadlift, and benchpress must be non-negative numbers or null' });
+    }
+
+    if (squat === null && deadlift === null && benchpress === null) {
+        return res.status(400).json({ error: 'At least one lift value is required' });
+    }
+
+    try {
+        const doc = await MaxLiftLog.create({ date, squat, deadlift, benchpress });
+        res.json({ id: doc._id, date: doc.date, squat: doc.squat, deadlift: doc.deadlift, benchpress: doc.benchpress });
+    } catch {
+        res.status(500).json({ error: 'Failed to save max lifts' });
+    }
+});
+
+app.delete('/api/max-lifts/latest', async (req, res) => {
+    try {
+        const latest = await MaxLiftLog.findOne().sort({ date: -1, createdAt: -1 });
+        if (!latest) return res.status(404).json({ error: 'No max-lift entries to delete' });
+
+        await MaxLiftLog.deleteOne({ _id: latest._id });
+        res.json({ deletedId: latest._id, deletedDate: latest.date });
+    } catch {
+        res.status(500).json({ error: 'Failed to delete latest max-lift entry' });
+    }
+});
+
+app.get('/api/weight-trend', async (req, res) => {
+    const daysRaw = Number(req.query.days);
+    const days = Number.isFinite(daysRaw) && daysRaw > 0 ? Math.min(Math.floor(daysRaw), 365) : 90;
+
+    if (!isGarminLoggedIn) {
+        try { await GCClient.login(); isGarminLoggedIn = true; }
+        catch { return res.status(503).json({ error: 'Garmin not connected' }); }
+    }
+
+    const now = Date.now();
+    if (
+        weightTrendCache
+        && weightTrendCache.days === days
+        && now - weightTrendCacheUpdatedAt < WEIGHT_TREND_CACHE_TTL
+    ) {
+        return res.json({ ...weightTrendCache, fromCache: true });
+    }
+
+    try {
+        const today = new Date();
+        const dates = Array.from({ length: days }, (_, i) => {
+            const d = new Date(today);
+            d.setDate(d.getDate() - (days - 1 - i));
+            return d;
+        });
+
+        const results = await Promise.allSettled(
+            dates.map((d) => GCClient.getDailyWeightInPounds(d))
+        );
+
+        const entries = results
+            .map((r, i) => {
+                if (r.status !== 'fulfilled') return null;
+                const value = r.value;
+                if (typeof value !== 'number' || Number.isNaN(value) || value <= 0) return null;
+                return {
+                    date: dates[i].toISOString().slice(0, 10),
+                    weight: +value.toFixed(1)
+                };
+            })
+            .filter(Boolean);
+
+        const response = {
+            days,
+            entries,
+            latest: entries.length ? entries[entries.length - 1] : null
+        };
+
+        weightTrendCache = response;
+        weightTrendCacheUpdatedAt = now;
+        res.json(response);
+    } catch {
+        res.status(500).json({ error: 'Failed to fetch weight trend' });
     }
 });
 
